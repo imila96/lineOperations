@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/api/lines")
+@RequestMapping("/api/v1/lines")
 public class LineController {
 
     @Autowired
@@ -49,8 +49,8 @@ public class LineController {
     public Line updateLine(@RequestBody Line line, @PathVariable ("id") long lineId) {
         Line existingLine = this.lineRepository.findById(lineId)
                 .orElseThrow(() -> new ResourceNotFoundException("Line not found with id :" + lineId));
-        existingLine.setTeam_Leader(line.getTeam_Leader());
-        existingLine.setShift_Status(line.getShift_Status());
+        existingLine.setTeamLeader(line.getTeamLeader());
+        existingLine.setShift(line.getShift());
 
         return this.lineRepository.save(existingLine);
     }
@@ -59,7 +59,7 @@ public class LineController {
     public Line updateTeamLeader(@RequestBody Line line, @PathVariable ("id") long lineId) {
         Line existingLine = this.lineRepository.findById(lineId)
                 .orElseThrow(() -> new ResourceNotFoundException("Line not found with id :" + lineId));
-        existingLine.setTeam_Leader(line.getTeam_Leader());
+        existingLine.setTeamLeader(line.getTeamLeader());
         return this.lineRepository.save(existingLine);
     }
 
@@ -67,7 +67,7 @@ public class LineController {
     public Line updateShift(@RequestBody Line line, @PathVariable ("id") long lineId) {
         Line existingLine = this.lineRepository.findById(lineId)
                 .orElseThrow(() -> new ResourceNotFoundException("Line not found with id :" + lineId));
-        existingLine.setShift_Status(line.getShift_Status());
+        existingLine.setShift(line.getShift());
         return this.lineRepository.save(existingLine);
     }
 
