@@ -119,7 +119,7 @@ public class LineController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Line> deleteLine(@PathVariable("id") long lineId) throws Exception {
 
-        if(Objects.isNull(lineId))
+        if (Objects.isNull(lineId))
             throw new Exception("Enter Line ID");
 
         Line existingLine = this.lineRepository.findById(lineId)
