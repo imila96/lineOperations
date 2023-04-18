@@ -11,13 +11,22 @@ public interface LineService {
 
     Line getLineById(long id) throws ResourceNotFoundException;
 
+
+
     List<Line> getAllLines();
 
     Line updateLine(Line line, long lineId) throws Exception;
 
     void updateShiftStatus(Map<String, String> request);
 
-    Long getShiftStatusCount(String shift);
+    List<Map<String, Object>> getAllDetailsByShift(String shift);
+
+    List<Map<String, Object>> getAllShiftDetails();
+
+
+    Long getShiftStatusActiveCount(String shift);
+
+    Long getShiftStatusDeActiveCount(String shift);
 
     void deleteLine(long lineId) throws Exception;
 }

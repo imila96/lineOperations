@@ -1,5 +1,6 @@
     package com.lineOperation.crud.entity;
 
+    import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
     import lombok.Data;
     import lombok.NoArgsConstructor;
 
@@ -7,6 +8,7 @@
 
     @Entity
     @Table(name = "shiftA")
+
     @Data
     @NoArgsConstructor
     public class ShiftA {
@@ -16,7 +18,7 @@
 
         private String teamLeader;
 
-        private String shiftStatus = "off";
+        private String shiftStatus = "false";
 
         @OneToOne(fetch = FetchType.LAZY)
         @MapsId

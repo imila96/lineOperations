@@ -12,6 +12,7 @@ public interface ShiftBRepository extends JpaRepository<ShiftB, Long> {
 
     ShiftB findByLineId(Long lineId);
 
+
     Long countByShiftStatus(String shiftStatus);
     void deleteByLine(Line line);
 }

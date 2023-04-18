@@ -1,6 +1,7 @@
 package com.lineOperation.crud.controller;
 
 import com.lineOperation.crud.entity.Line;
+import com.lineOperation.crud.entity.ShiftA;
 import com.lineOperation.crud.exception.ResourceNotFoundException;
 import com.lineOperation.crud.service.LineService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,12 +48,32 @@ public class LineController {
         return this.lineService.getAllLines();
     }
 
+    //gift al details with shift status
+
+    @GetMapping("/shiftDetails")
+    public ResponseEntity<List<Map<String, Object>>> getAllShiftDetails() {
+        List<Map<String, Object>> details = lineService.getAllShiftDetails();
+        return new ResponseEntity<>(details, HttpStatus.OK);
+    }
+
+
+    //get line details by shift
+    @GetMapping("/shiftDetails/{shift}")
+    public ResponseEntity<List<Map<String, Object>>> getAllDetailsByShift(@PathVariable String shift) {
+        List<Map<String, Object>> details = lineService.getAllDetailsByShift(shift);
+        return new ResponseEntity<>(details, HttpStatus.OK);
+    }
+
+
+
     //Update Line
     @PutMapping("/{id}")
     public Line updateLine(@RequestBody Line line, @PathVariable("id") long lineId) throws Exception {
         return lineService.updateLine(line, lineId);
     }
 
+
+    //change the shift status
     @PutMapping("/shift-status/{lineId}/{shift}")
     public void updateShiftStatus(@PathVariable Long lineId, @PathVariable String shift, @RequestBody Map<String, String> request) {
         request.put("lineId", String.valueOf(lineId));
@@ -60,13 +81,20 @@ public class LineController {
         lineService.updateShiftStatus(request);
     }
 
-
-    @GetMapping("/shift-status/{shift}")
-    public ResponseEntity<Long> getShiftStatusCount(@PathVariable("shift") String shift) {
-        Long count = lineService.getShiftStatusCount(shift);
+//get number of working lines
+    @GetMapping("/shift-active-status/{shift}")
+    public ResponseEntity<Long> getShiftStatusActiveCount(@PathVariable("shift") String shift) {
+        Long count = lineService.getShiftStatusActiveCount(shift);
         return ResponseEntity.ok(count);
     }
 
+    @GetMapping("/shift-deactive-status/{shift}")
+    public ResponseEntity<Long> getShiftStatusDeActiveCount(@PathVariable("shift") String shift) {
+        Long count = lineService.getShiftStatusDeActiveCount(shift);
+        return ResponseEntity.ok(count);
+    }
+
+    //delete line
     @DeleteMapping("/{id}")
     public ResponseEntity<Line> deleteLine(@PathVariable("id") long lineId) throws Exception {
         lineService.deleteLine(lineId);

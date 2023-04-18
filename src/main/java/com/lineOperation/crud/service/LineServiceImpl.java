@@ -12,9 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class LineServiceImpl implements LineService {
@@ -28,6 +26,8 @@ public class LineServiceImpl implements LineService {
     @Autowired
     private ShiftBRepository shiftBRepository;
 
+
+    //create a line
     @Override
     @Transactional
     public Line createLine(Line line) throws Exception {
@@ -56,6 +56,8 @@ public class LineServiceImpl implements LineService {
         return savedLine;
     }
 
+
+    //get details by lineid
     @Override
     public Line getLineById(long id) throws ResourceNotFoundException {
         return this.lineRepository.findById(id)
@@ -66,6 +68,10 @@ public class LineServiceImpl implements LineService {
     public List<Line> getAllLines() {
         return this.lineRepository.findAll();
     }
+
+
+
+//update line details-teamleaders
 
     @Override
     public Line updateLine(Line line, long lineId) throws Exception {
@@ -109,7 +115,7 @@ public class LineServiceImpl implements LineService {
     }
 
 
-    //updateShiftStatus
+    //update ShiftStatus
     @Override
     public void updateShiftStatus(Map<String, String> request) {
         Long lineId = Long.parseLong(request.get("lineId"));
@@ -127,20 +133,88 @@ public class LineServiceImpl implements LineService {
             throw new IllegalArgumentException("Invalid shift: " + shift);
         }
     }
-
-
+    //return all details (shift A+Shift B)
     @Override
-    public Long getShiftStatusCount(String shift) {
+    public List<Map<String, Object>> getAllShiftDetails() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        List<ShiftA> shiftAList = shiftARepository.findAll();
+        for (ShiftA shiftA : shiftAList) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("teamLeader", shiftA.getTeamLeader());
+            details.put("lineId", shiftA.getLine().getId());
+            details.put("shiftStatus", shiftA.getShiftStatus());
+            details.put("shift", "ShiftA");
+            result.add(details);
+        }
+
+        List<ShiftB> shiftBList = shiftBRepository.findAll();
+        for (ShiftB shiftB : shiftBList) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("teamLeader", shiftB.getTeamLeader());
+            details.put("lineId", shiftB.getLine().getId());
+            details.put("shiftStatus", shiftB.getShiftStatus());
+            details.put("shift", "ShiftB");
+            result.add(details);
+        }
+        result.sort(Comparator.comparing(m -> (Long) m.get("lineId")));
+        return result;
+    }
+
+
+//return details by passing shift
+    @Override
+    public List<Map<String, Object>> getAllDetailsByShift(String shift) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (shift.equalsIgnoreCase("ShiftA")) {
+            List<ShiftA> shiftAList = shiftARepository.findAll();
+            for (ShiftA shiftA : shiftAList) {
+                Map<String, Object> details = new HashMap<>();
+                details.put("teamLeader", shiftA.getTeamLeader());
+                details.put("lineId", shiftA.getLine().getId());
+                details.put("shiftStatus", shiftA.getShiftStatus());
+                result.add(details);
+            }
+        } else if (shift.equalsIgnoreCase("ShiftB")) {
+            List<ShiftB> shiftBList = shiftBRepository.findAll();
+            for (ShiftB shiftB : shiftBList) {
+                Map<String, Object> details = new HashMap<>();
+                details.put("teamLeader", shiftB.getTeamLeader());
+                details.put("lineId", shiftB.getLine().getId());
+                details.put("shiftStatus", shiftB.getShiftStatus());
+                result.add(details);
+            }
+        }
+        return result;
+    }
+
+
+    //get number of working lines
+    @Override
+    public Long getShiftStatusActiveCount(String shift) {
         Long count;
         if (shift.equals("ShiftA")) {
-            count = shiftARepository.countByShiftStatus("on");
+            count = shiftARepository.countByShiftStatus("true");
         } else if (shift.equals("ShiftB")) {
-            count = shiftBRepository.countByShiftStatus("on");
+            count = shiftBRepository.countByShiftStatus("true");
         } else {
             throw new IllegalArgumentException("Invalid shift: " + shift);
         }
         return count;
     }
+
+    @Override
+    public Long getShiftStatusDeActiveCount(String shift) {
+        Long count;
+        if (shift.equals("ShiftA")) {
+            count = shiftARepository.countByShiftStatus("false");
+        } else if (shift.equals("ShiftB")) {
+            count = shiftBRepository.countByShiftStatus("false");
+        } else {
+            throw new IllegalArgumentException("Invalid shift: " + shift);
+        }
+        return count;
+    }
+
 
     @Transactional
     @Override
