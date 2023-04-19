@@ -36,17 +36,28 @@ public class LineServiceImpl implements LineService {
     @Transactional
     public ResponseEntity<Object> createLine(Line line) throws LineValidationException, LineSaveException {
         try {
-            if (line.getLid() == null)
-                throw new LineValidationException("Line ID is required.");
-
-            if (!line.getLid().matches("^DS\\d+$"))
-                throw new LineValidationException("Line ID should start with 'DS' and be followed by any number.");
-
             if (line.getShiftAteamLeader() == null)
                 throw new LineValidationException("Team leader for Shift A is required.");
 
             if (line.getShiftBteamLeader() == null)
                 throw new LineValidationException("Team leader for Shift B is required.");
+
+            // retrieve the maximum lid from the database
+            String maxLid = lineRepository.findMaxLid();
+
+            // if the maximum lid is null, set it to DS0000
+            if (maxLid == null) {
+                maxLid = "DS0000";
+            }
+
+            // extract the numeric portion of the maximum lid and increment it by 1
+            int newLidNum = Integer.parseInt(maxLid.substring(2)) + 1;
+
+            // format the new lid with leading zeroes and the 'DS' prefix
+            String newLid = String.format("DS%04d", newLidNum);
+
+            // set the new lid for the line
+            line.setLid(newLid);
 
             Line savedLine = this.lineRepository.save(line);
 
@@ -73,6 +84,7 @@ public class LineServiceImpl implements LineService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
 
     //get details by lineid

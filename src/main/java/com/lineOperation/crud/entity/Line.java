@@ -18,8 +18,12 @@
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private long id;
 
+        public static final String LID_REGEX_PATTERN = "^DS\\d+$";
+
+
         @Column(unique = true)
         private String lid;
+
 
         private String shiftAteamLeader;
 
