@@ -3,7 +3,10 @@ package com.lineOperation.crud.controller;
 import com.lineOperation.crud.entity.Line;
 import com.lineOperation.crud.entity.LineDto;
 import com.lineOperation.crud.entity.ShiftA;
+import com.lineOperation.crud.exception.LineNotFoundException;
+import com.lineOperation.crud.exception.LineValidationException;
 import com.lineOperation.crud.exception.ResourceNotFoundException;
+import com.lineOperation.crud.exception.ShiftUpdateException;
 import com.lineOperation.crud.service.LineService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,25 +41,19 @@ public class LineController {
         try {
             Line line = lineService.getLineByLId(lineId);
             return new ResponseEntity<>(line, HttpStatus.OK);
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException | LineValidationException e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
 
-
-
-//    @GetMapping
-//    public List<Line> getAllLines() {
-//        return this.lineService.getAllLines();
-//    }
 // get all lines
     @GetMapping
-    public List<LineDto> getAllLines2() {
-        return this.lineService.getAllLines2();
+    public List<LineDto> getAllLines() {
+        return this.lineService.getAllLines();
     }
 
 
-    //gift al details with shift status
+    //get all details with shift status
 
     @GetMapping("/shiftDetails")
     public ResponseEntity<List<Map<String, Object>>> getAllShiftDetails() {
@@ -83,7 +80,7 @@ public class LineController {
 
     //change the shift status
     @PutMapping("/shift-status/{lid}/{shift}")
-    public void updateShiftStatus(@PathVariable String lid, @PathVariable String shift, @RequestBody Map<String, String> request) {
+    public void updateShiftStatus(@PathVariable String lid, @PathVariable String shift, @RequestBody Map<String, String> request) throws LineNotFoundException, ShiftUpdateException {
         request.put("lid", lid);
         request.put("shift", shift);
         boolean status = Boolean.parseBoolean(request.get("status"));

@@ -2,31 +2,31 @@ package com.lineOperation.crud.service;
 
 import com.lineOperation.crud.entity.Line;
 import com.lineOperation.crud.entity.LineDto;
-import com.lineOperation.crud.exception.ResourceNotFoundException;
+import com.lineOperation.crud.exception.*;
 
 import java.util.List;
 import java.util.Map;
 
 public interface LineService {
-    Line createLine(Line line) throws Exception;
+    Line createLine(Line line) throws LineValidationException, LineSaveException;
 
-    Line getLineByLId(String lid) throws ResourceNotFoundException;
+    Line getLineByLId(String lid) throws ResourceNotFoundException, LineValidationException;
 
-    List<Line> getAllLines();
 
-    List<LineDto> getAllLines2();
+    List<LineDto> getAllLines();
 
     Line updateLine(Line line, String lineId) throws Exception;
 
-    boolean updateShiftStatus(String lineId, String shift, boolean status);
+    boolean updateShiftStatus(String lineId, String shift, boolean status) throws LineNotFoundException, ShiftUpdateException;
 
     List<Map<String, Object>> getAllDetailsByShift(String shift);
 
     List<Map<String, Object>> getAllShiftDetails();
 
-    Long getShiftStatusActiveCount(String shift);
+    public Long getShiftStatusActiveCount(String shift) throws InvalidShiftException;
 
-    Long getShiftStatusDeActiveCount(String shift);
+
+    Long getShiftStatusDeActiveCount(String shift) throws InvalidShiftException;;
 
     void deleteLine(String lid) throws Exception;
 }
