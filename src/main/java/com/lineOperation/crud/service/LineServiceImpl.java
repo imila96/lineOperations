@@ -11,6 +11,8 @@ import com.lineOperation.crud.repository.ShiftBRepository;
 import com.lineOperation.crud.service.LineService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,22 +34,20 @@ public class LineServiceImpl implements LineService {
     //create a line
     @Override
     @Transactional
-    public Line createLine(Line line) throws LineValidationException, LineSaveException {
-
-        if (line.getLid() == null)
-            throw new LineValidationException("Line ID is required.");
-
-        if (!line.getLid().matches("^DS\\d+$"))
-            throw new LineValidationException("Line ID should start with 'DS' and be followed by any number.");
-
-
-        if (line.getShiftAteamLeader() == null)
-            throw new LineValidationException("Team leader for Shift A is required.");
-
-        if (line.getShiftBteamLeader() == null)
-            throw new LineValidationException("Team leader for Shift B is required.");
-
+    public ResponseEntity<Object> createLine(Line line) throws LineValidationException, LineSaveException {
         try {
+            if (line.getLid() == null)
+                throw new LineValidationException("Line ID is required.");
+
+            if (!line.getLid().matches("^DS\\d+$"))
+                throw new LineValidationException("Line ID should start with 'DS' and be followed by any number.");
+
+            if (line.getShiftAteamLeader() == null)
+                throw new LineValidationException("Team leader for Shift A is required.");
+
+            if (line.getShiftBteamLeader() == null)
+                throw new LineValidationException("Team leader for Shift B is required.");
+
             Line savedLine = this.lineRepository.save(line);
 
             ShiftA shiftA = new ShiftA();
@@ -62,12 +62,17 @@ public class LineServiceImpl implements LineService {
             shiftB.setLid(savedLine.getLid());
             this.shiftBRepository.save(shiftB);
 
-            return savedLine;
+            System.out.println("Line Created Successfully");
+
+            return ResponseEntity.ok("Line Created Successfully");
+        } catch (LineValidationException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (DataAccessException e) {
             throw new LineSaveException("Error occurred while saving the line.", e);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
 
     //get details by lineid
@@ -104,28 +109,28 @@ public class LineServiceImpl implements LineService {
 //update line details-teamleaders
 
     @Override
-    public Line updateLine(Line line, String lineId) throws LineValidationException, LineNotFoundException, LineSaveException {
-
-        if (line == null)
-            throw new LineValidationException("Line object cannot be null.");
-
-        if (lineId == null || lineId.isEmpty())
-            throw new LineValidationException("Line ID cannot be null or empty.");
-
-        if (!lineId.matches("^DS\\d+$"))
-            throw new LineValidationException("Line ID format is incorrect.");
-
-        Line existingLine = this.lineRepository.findByLid(lineId);
-        if (existingLine == null)
-            throw new LineNotFoundException("Line not found with ID: " + lineId);
-
-        if (line.getShiftAteamLeader() == null)
-            throw new LineValidationException("Team leader for Shift A is required.");
-
-        if (line.getShiftBteamLeader() == null)
-            throw new LineValidationException("Team leader for Shift B is required.");
+    public ResponseEntity<String> updateLine(Line line, String lineId) {
 
         try {
+            if (line == null)
+                throw new LineValidationException("Line object cannot be null.");
+
+            if (lineId == null || lineId.isEmpty())
+                throw new LineValidationException("Line ID cannot be null or empty.");
+
+            if (!lineId.matches("^DS\\d+$"))
+                throw new LineValidationException("Line ID format is incorrect.");
+
+            Line existingLine = this.lineRepository.findByLid(lineId);
+            if (existingLine == null)
+                throw new LineNotFoundException("Line not found with ID: " + lineId);
+
+            if (line.getShiftAteamLeader() == null)
+                throw new LineValidationException("Team leader for Shift A is required.");
+
+            if (line.getShiftBteamLeader() == null)
+                throw new LineValidationException("Team leader for Shift B is required.");
+
             existingLine.setShiftAteamLeader(line.getShiftAteamLeader());
             existingLine.setShiftBteamLeader(line.getShiftBteamLeader());
 
@@ -151,46 +156,53 @@ public class LineServiceImpl implements LineService {
             }
             this.shiftBRepository.save(shiftB);
 
-            return savedLine;
-        } catch (DataAccessException e) {
-            throw new LineSaveException("Error occurred while saving the line.", e);
+            return ResponseEntity.ok("Line Updated Successfully");
+
+        } catch (LineValidationException | LineNotFoundException | DataAccessException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while updating the line.");
         }
     }
+
 
 
     //update ShiftStatus
     @Override
     @Transactional
-    public boolean updateShiftStatus(String lineId, String shift, boolean status) throws LineNotFoundException, ShiftUpdateException {
-        if (!lineId.matches("^DS\\d+$")) {
-            throw new LineNotFoundException("Invalid line ID: " + lineId);
-        }
-        if (!shift.equalsIgnoreCase("ShiftA") && !shift.equalsIgnoreCase("ShiftB")) {
-            throw new ShiftUpdateException("Invalid shift: " + shift);
-        }
+    public ResponseEntity<String> updateShiftStatus(String lineId, String shift, boolean status) {
         try {
+            if (!lineId.matches("^DS\\d+$")) {
+                throw new LineNotFoundException("Invalid line ID: " + lineId);
+            }
+            if (!shift.equalsIgnoreCase("ShiftA") && !shift.equalsIgnoreCase("ShiftB")) {
+                throw new ShiftUpdateException("Invalid shift: " + shift);
+            }
+
             if (shift.equalsIgnoreCase("ShiftA")) {
                 ShiftA shiftA = shiftARepository.findByLineLid(lineId);
                 if (shiftA != null) {
                     shiftA.setShiftStatus(status);
                     shiftARepository.save(shiftA);
-                    return true;
+                    return ResponseEntity.ok("Shift Status Changed Successfully");
                 }
             } else if (shift.equalsIgnoreCase("ShiftB")) {
                 ShiftB shiftB = shiftBRepository.findByLineLid(lineId);
                 if (shiftB != null) {
                     shiftB.setShiftStatus(status);
                     shiftBRepository.save(shiftB);
-                    return true;
+                    return ResponseEntity.ok("Shift Status Changed Successfully");
                 }
             }
-            return false;
+
+            throw new LineNotFoundException("Line not found with ID: " + lineId);
+
+        } catch (LineNotFoundException | ShiftUpdateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (DataAccessException e) {
-            throw new ShiftUpdateException("Error occurred while updating shift status.", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while updating shift status.");
         }
     }
-
-
 
 
 
@@ -224,7 +236,7 @@ public class LineServiceImpl implements LineService {
 
             }
 
-            result.sort(Comparator.comparing(m -> ((String) m.get("lineId")).substring(2)));
+            result.sort(Comparator.comparing(m -> Integer.parseInt(((String) m.get("lineId")).substring(2))));
 
             return result;
         } catch (DataAccessException e) {
@@ -260,12 +272,13 @@ public class LineServiceImpl implements LineService {
             } else {
                 throw new ShiftDetailsNotFoundException("Invalid shift type.");
             }
-            result.sort(Comparator.comparing(m -> ((String) m.get("lineId")).substring(2)));
+            result.sort(Comparator.comparing(m -> Integer.parseInt(((String) m.get("lineId")).substring(2))));
             return result;
         } catch (DataAccessException e) {
             throw new ShiftDetailsNotFoundException("Error occurred while retrieving shift details.", e);
         }
     }
+
 
 
 
@@ -284,9 +297,6 @@ public class LineServiceImpl implements LineService {
         return count;
     }
 
-
-
-
     @Override
     public Long getShiftStatusDeActiveCount(String shift) throws InvalidShiftException {
         Long count;
@@ -300,25 +310,33 @@ public class LineServiceImpl implements LineService {
         return count;
     }
 
-
     @Transactional
     @Override
-    public void deleteLine(String lid) throws InvalidLineIdException, LineNotFoundException {
-        if (lid == null || !lid.matches("^DS\\d+$")) {
-            throw new InvalidLineIdException("Invalid line ID: " + lid);
+    public ResponseEntity<String> deleteLine(String lid) {
+        try {
+            if (lid == null || !lid.matches("^DS\\d+$")) {
+                throw new InvalidLineIdException("Invalid line ID: " + lid);
+            }
+
+            Line existingLine = this.lineRepository.findByLid(lid);
+            if (existingLine == null) {
+                throw new LineNotFoundException("Line not found with ID: " + lid);
+            }
+
+            this.shiftARepository.deleteByLine(existingLine);
+            this.shiftBRepository.deleteByLine(existingLine);
+
+            this.lineRepository.delete(existingLine);
+
+            return ResponseEntity.ok("Line deleted successfully.");
+        } catch (InvalidLineIdException | LineNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while deleting the line.");
         }
-
-        Line existingLine = this.lineRepository.findByLid(lid);
-        if (existingLine == null) {
-            throw new LineNotFoundException("Line not found with ID: " + lid);
-        }
-
-
-        this.shiftARepository.deleteByLine(existingLine);
-        this.shiftBRepository.deleteByLine(existingLine);
-
-        this.lineRepository.delete(existingLine);
     }
+
+
 
 
 }
