@@ -1,33 +1,37 @@
-package com.lineOperation.crud.entity;
+    package com.lineOperation.crud.entity;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+    import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+    import lombok.Data;
+    import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
+    import javax.persistence.*;
 
-@Entity
-@Table(name = "line_entries")
-@Data
-@NoArgsConstructor
-@JsonIgnoreProperties({"shiftA", "shiftB"})
-public class Line {
+    @Entity
+    @Table(name = "line_entries")
+    @Data
+    @NoArgsConstructor
+    @JsonIgnoreProperties({"shiftA", "shiftB"})
+    public class Line {
 
-    @Id
-    private long id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private long id;
 
-    private String shiftAteamLeader;
+        @Column(unique = true)
+        private String lid;
 
-    private String shiftBteamLeader;
+        private String shiftAteamLeader;
+
+        private String shiftBteamLeader;
 
 
 
-    @OneToOne(mappedBy = "line", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private ShiftA shiftA;
+        @OneToOne(mappedBy = "line", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+        private ShiftA shiftA;
 
-    @OneToOne(mappedBy = "line", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private ShiftB shiftB;
+        @OneToOne(mappedBy = "line", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+        private ShiftB shiftB;
 
-}
+    }
 

@@ -9,4 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface LineRepository extends JpaRepository<Line, Long> {
 
+    Line findByLid(String lid);
+
+
 }

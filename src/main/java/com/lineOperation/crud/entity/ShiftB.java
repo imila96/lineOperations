@@ -15,11 +15,15 @@ import javax.persistence.*;
 public class ShiftB {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
+    @Column(unique = true)
+    private String lid;
 
     private String teamLeader;
 
-    private String shiftStatus = "false";
+    private boolean shiftStatus = false;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId

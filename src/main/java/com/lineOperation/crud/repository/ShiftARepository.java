@@ -12,8 +12,11 @@ public interface ShiftARepository extends JpaRepository<ShiftA, Long> {
 
     ShiftA findByLineId(Long lineId);
 
-    Long countByShiftStatus(String shiftStatus);
+    ShiftA findByLineLid(String lid); // updated method signature
 
+    Long countByShiftStatus(boolean shiftStatus);
+
+    Line findByLid(String lid);
 
     void deleteByLine(Line line);
 }

@@ -1,6 +1,7 @@
 package com.lineOperation.crud.service;
 
 import com.lineOperation.crud.entity.Line;
+import com.lineOperation.crud.entity.LineDto;
 import com.lineOperation.crud.entity.ShiftA;
 import com.lineOperation.crud.entity.ShiftB;
 import com.lineOperation.crud.exception.ResourceNotFoundException;
@@ -32,8 +33,9 @@ public class LineServiceImpl implements LineService {
     @Transactional
     public Line createLine(Line line) throws Exception {
 
-        if (Objects.isNull(line.getId()))
+        if (line.getLid() == null)
             throw new Exception("Enter Line ID");
+
 
         if (line.getShiftAteamLeader() == null)
             throw new Exception("Enter team leader for Shift A!");
@@ -46,11 +48,13 @@ public class LineServiceImpl implements LineService {
         ShiftA shiftA = new ShiftA();
         shiftA.setLine(savedLine);
         shiftA.setTeamLeader(savedLine.getShiftAteamLeader());
+        shiftA.setLid(savedLine.getLid());
         this.shiftARepository.save(shiftA);
 
         ShiftB shiftB = new ShiftB();
         shiftB.setLine(savedLine);
         shiftB.setTeamLeader(savedLine.getShiftBteamLeader());
+        shiftB.setLid(savedLine.getLid());
         this.shiftBRepository.save(shiftB);
 
         return savedLine;
@@ -58,15 +62,25 @@ public class LineServiceImpl implements LineService {
 
 
     //get details by lineid
-    @Override
-    public Line getLineById(long id) throws ResourceNotFoundException {
-        return this.lineRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Line not found with id :" + id));
-    }
 
+    @Override
+    public Line getLineByLId(String lid) throws ResourceNotFoundException {
+        return this.lineRepository.findByLid(lid);
+               // .orElseThrow(() -> new ResourceNotFoundException("Line not found with id :" + lid));
+    }
     @Override
     public List<Line> getAllLines() {
         return this.lineRepository.findAll();
+    }
+
+    @Override
+    public List<LineDto> getAllLines2() {
+        List<Line> lines = this.lineRepository.findAll();
+        List<LineDto> lineDtos = new ArrayList<>();
+        for (Line line : lines) {
+            lineDtos.add(new LineDto(line));
+        }
+        return lineDtos;
     }
 
 
@@ -74,9 +88,9 @@ public class LineServiceImpl implements LineService {
 //update line details-teamleaders
 
     @Override
-    public Line updateLine(Line line, long lineId) throws Exception {
-        if (Objects.isNull(lineId))
-            throw new Exception("Enter Line ID");
+    public Line updateLine(Line line, String lineId) throws Exception {
+//        if (line.getLid() == null)
+//            throw new Exception("Enter Line ID");
 
         if (line.getShiftAteamLeader() == null)
             throw new Exception("Enter team leader for Shift A!");
@@ -84,8 +98,8 @@ public class LineServiceImpl implements LineService {
         if (line.getShiftBteamLeader() == null)
             throw new Exception("Enter team leader for Shift B!");
 
-        Line existingLine = this.lineRepository.findById(lineId)
-                .orElseThrow(() -> new ResourceNotFoundException("Line not found with id :" + lineId));
+        Line existingLine = this.lineRepository.findByLid(lineId);
+                //.orElseThrow(() -> new ResourceNotFoundException("Line not found with id :" + lineId));
 
         existingLine.setShiftAteamLeader(line.getShiftAteamLeader());
         existingLine.setShiftBteamLeader(line.getShiftBteamLeader());
@@ -117,22 +131,29 @@ public class LineServiceImpl implements LineService {
 
     //update ShiftStatus
     @Override
-    public void updateShiftStatus(Map<String, String> request) {
-        Long lineId = Long.parseLong(request.get("lineId"));
-        String shift = request.get("shift");
-        String status = request.get("status");
-        if (shift.equals("ShiftA")) {
-            ShiftA shiftA = shiftARepository.findByLineId(lineId);
-            shiftA.setShiftStatus(status);
-            shiftARepository.save(shiftA);
-        } else if (shift.equals("ShiftB")) {
-            ShiftB shiftB = shiftBRepository.findByLineId(lineId);
-            shiftB.setShiftStatus(status);
-            shiftBRepository.save(shiftB);
-        } else {
-            throw new IllegalArgumentException("Invalid shift: " + shift);
+    @Transactional
+    public boolean updateShiftStatus(String lineId, String shift, boolean status) {
+        if (shift.equalsIgnoreCase("ShiftA")) {
+            ShiftA shiftA = shiftARepository.findByLineLid(lineId);
+            if (shiftA != null) {
+                shiftA.setShiftStatus(status);
+                shiftARepository.save(shiftA);
+                return true;
+            }
+        } else if (shift.equalsIgnoreCase("ShiftB")) {
+            ShiftB shiftB = shiftBRepository.findByLineLid(lineId);
+            if (shiftB != null) {
+                shiftB.setShiftStatus(status);
+                shiftBRepository.save(shiftB);
+                return true;
+            }
         }
+        return false;
     }
+
+
+
+
     //return all details (shift A+Shift B)
     @Override
     public List<Map<String, Object>> getAllShiftDetails() {
@@ -141,8 +162,8 @@ public class LineServiceImpl implements LineService {
         for (ShiftA shiftA : shiftAList) {
             Map<String, Object> details = new HashMap<>();
             details.put("teamLeader", shiftA.getTeamLeader());
-            details.put("lineId", shiftA.getLine().getId());
-            details.put("shiftStatus", shiftA.getShiftStatus());
+            details.put("lineId", shiftA.getLine().getLid());
+            details.put("shiftStatus", shiftA.isShiftStatus());
             details.put("shift", "ShiftA");
             result.add(details);
         }
@@ -151,41 +172,43 @@ public class LineServiceImpl implements LineService {
         for (ShiftB shiftB : shiftBList) {
             Map<String, Object> details = new HashMap<>();
             details.put("teamLeader", shiftB.getTeamLeader());
-            details.put("lineId", shiftB.getLine().getId());
-            details.put("shiftStatus", shiftB.getShiftStatus());
+            details.put("lineId", shiftB.getLine().getLid());
+            details.put("shiftStatus", shiftB.isShiftStatus());
             details.put("shift", "ShiftB");
             result.add(details);
         }
-        result.sort(Comparator.comparing(m -> (Long) m.get("lineId")));
+        result.sort(Comparator.comparing(m -> (String) m.get("lineId")));
         return result;
     }
 
 
 //return details by passing shift
-    @Override
-    public List<Map<String, Object>> getAllDetailsByShift(String shift) {
-        List<Map<String, Object>> result = new ArrayList<>();
-        if (shift.equalsIgnoreCase("ShiftA")) {
-            List<ShiftA> shiftAList = shiftARepository.findAll();
-            for (ShiftA shiftA : shiftAList) {
-                Map<String, Object> details = new HashMap<>();
-                details.put("teamLeader", shiftA.getTeamLeader());
-                details.put("lineId", shiftA.getLine().getId());
-                details.put("shiftStatus", shiftA.getShiftStatus());
-                result.add(details);
-            }
-        } else if (shift.equalsIgnoreCase("ShiftB")) {
-            List<ShiftB> shiftBList = shiftBRepository.findAll();
-            for (ShiftB shiftB : shiftBList) {
-                Map<String, Object> details = new HashMap<>();
-                details.put("teamLeader", shiftB.getTeamLeader());
-                details.put("lineId", shiftB.getLine().getId());
-                details.put("shiftStatus", shiftB.getShiftStatus());
-                result.add(details);
-            }
+@Override
+public List<Map<String, Object>> getAllDetailsByShift(String shift) {
+    List<Map<String, Object>> result = new ArrayList<>();
+    if (shift.equalsIgnoreCase("ShiftA")) {
+        List<ShiftA> shiftAList = shiftARepository.findAll();
+        for (ShiftA shiftA : shiftAList) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("teamLeader", shiftA.getTeamLeader());
+            details.put("lineId", shiftA.getLine().getLid());
+            details.put("shiftStatus", shiftA.isShiftStatus());
+            result.add(details);
         }
-        return result;
+    } else if (shift.equalsIgnoreCase("ShiftB")) {
+        List<ShiftB> shiftBList = shiftBRepository.findAll();
+        for (ShiftB shiftB : shiftBList) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("teamLeader", shiftB.getTeamLeader());
+            details.put("lineId", shiftB.getLine().getLid());
+            details.put("shiftStatus", shiftB.isShiftStatus());
+            result.add(details);
+        }
     }
+    result.sort(Comparator.comparing(m -> (String) m.get("lineId")));
+    return result;
+}
+
 
 
     //get number of working lines
@@ -193,9 +216,9 @@ public class LineServiceImpl implements LineService {
     public Long getShiftStatusActiveCount(String shift) {
         Long count;
         if (shift.equals("ShiftA")) {
-            count = shiftARepository.countByShiftStatus("true");
+            count = shiftARepository.countByShiftStatus(true);
         } else if (shift.equals("ShiftB")) {
-            count = shiftBRepository.countByShiftStatus("true");
+            count = shiftBRepository.countByShiftStatus(true);
         } else {
             throw new IllegalArgumentException("Invalid shift: " + shift);
         }
@@ -206,9 +229,9 @@ public class LineServiceImpl implements LineService {
     public Long getShiftStatusDeActiveCount(String shift) {
         Long count;
         if (shift.equals("ShiftA")) {
-            count = shiftARepository.countByShiftStatus("false");
+            count = shiftARepository.countByShiftStatus(false);
         } else if (shift.equals("ShiftB")) {
-            count = shiftBRepository.countByShiftStatus("false");
+            count = shiftBRepository.countByShiftStatus(false);
         } else {
             throw new IllegalArgumentException("Invalid shift: " + shift);
         }
@@ -218,13 +241,13 @@ public class LineServiceImpl implements LineService {
 
     @Transactional
     @Override
-    public void deleteLine(long lineId) throws Exception {
-        if (lineId == 0) {
+    public void deleteLine(String lid) throws Exception {
+        if (lid ==null) {
             throw new Exception("Enter Line ID");
         }
 
-        Line existingLine = this.lineRepository.findById(lineId)
-                .orElseThrow(() -> new ResourceNotFoundException("line not found with id :" + lineId));
+        Line existingLine = this.lineRepository.findByLid(lid);
+              //  .orElseThrow(() -> new ResourceNotFoundException("line not found with id :" + lineId));
 
         this.shiftARepository.deleteByLine(existingLine);
         this.shiftBRepository.deleteByLine(existingLine);

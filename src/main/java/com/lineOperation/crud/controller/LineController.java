@@ -1,6 +1,7 @@
 package com.lineOperation.crud.controller;
 
 import com.lineOperation.crud.entity.Line;
+import com.lineOperation.crud.entity.LineDto;
 import com.lineOperation.crud.entity.ShiftA;
 import com.lineOperation.crud.exception.ResourceNotFoundException;
 import com.lineOperation.crud.service.LineService;
@@ -32,21 +33,28 @@ public class LineController {
     }
 
     // get line by id
-    @GetMapping("/{id}")
-    public ResponseEntity<Line> getLineById(@PathVariable(value = "id") long lineId) {
+    @GetMapping("/{lid}")
+    public ResponseEntity<Line> getLineByLId(@PathVariable(value = "lid") String lineId) {
         try {
-            Line line = lineService.getLineById(lineId);
+            Line line = lineService.getLineByLId(lineId);
             return new ResponseEntity<>(line, HttpStatus.OK);
         } catch (ResourceNotFoundException e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
 
-    // get all lines
+
+
+//    @GetMapping
+//    public List<Line> getAllLines() {
+//        return this.lineService.getAllLines();
+//    }
+// get all lines
     @GetMapping
-    public List<Line> getAllLines() {
-        return this.lineService.getAllLines();
+    public List<LineDto> getAllLines2() {
+        return this.lineService.getAllLines2();
     }
+
 
     //gift al details with shift status
 
@@ -67,21 +75,29 @@ public class LineController {
 
 
     //Update Line
-    @PutMapping("/{id}")
-    public Line updateLine(@RequestBody Line line, @PathVariable("id") long lineId) throws Exception {
+    @PutMapping("/{lid}")
+    public Line updateLine(@RequestBody Line line, @PathVariable("lid") String lineId) throws Exception {
         return lineService.updateLine(line, lineId);
     }
 
 
     //change the shift status
-    @PutMapping("/shift-status/{lineId}/{shift}")
-    public void updateShiftStatus(@PathVariable Long lineId, @PathVariable String shift, @RequestBody Map<String, String> request) {
-        request.put("lineId", String.valueOf(lineId));
+    @PutMapping("/shift-status/{lid}/{shift}")
+    public void updateShiftStatus(@PathVariable String lid, @PathVariable String shift, @RequestBody Map<String, String> request) {
+        request.put("lid", lid);
         request.put("shift", shift);
-        lineService.updateShiftStatus(request);
+        boolean status = Boolean.parseBoolean(request.get("status"));
+        request.put("status", String.valueOf(status));
+
+        lineService.updateShiftStatus(request.get("lid"), request.get("shift"), status);
     }
 
-//get number of working lines
+
+
+
+
+
+    //get number of working lines
     @GetMapping("/shift-active-status/{shift}")
     public ResponseEntity<Long> getShiftStatusActiveCount(@PathVariable("shift") String shift) {
         Long count = lineService.getShiftStatusActiveCount(shift);
@@ -95,9 +111,9 @@ public class LineController {
     }
 
     //delete line
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Line> deleteLine(@PathVariable("id") long lineId) throws Exception {
-        lineService.deleteLine(lineId);
+    @DeleteMapping("/{lid}")
+    public ResponseEntity<Line> deleteLine(@PathVariable("lid") String lid) throws Exception {
+        lineService.deleteLine(lid);
         return ResponseEntity.ok().build();
     }
 }
